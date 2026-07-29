@@ -1,0 +1,75 @@
+[project]
+name = "helios-solver"
+version = "0.1.0"
+description = "Low-thrust spacecraft trajectory optimization, GPU-accelerated."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Josue" }]
+keywords = [
+    "astrodynamics",
+    "trajectory-optimization",
+    "low-thrust-propulsion",
+    "optimal-control",
+    "gtoc",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/DavidDevGt/helios-solver"
+Repository = "https://github.com/DavidDevGt/helios-solver"
+Issues = "https://github.com/DavidDevGt/helios-solver/issues"
+Changelog = "https://github.com/DavidDevGt/helios-solver/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+# D-1 (ver PLAN.md sec. 1) aun no cerrada: pykep si compila, si no hapsira+jplephem.
+orbital = [
+    # "pykep>=2.6",
+    # "hapsira>=0.18",
+    # "jplephem>=2.22",
+]
+# Fase 3 en adelante.
+surrogate = [
+    "torch>=2.2",
+    "polars>=1.0",
+    "pyarrow>=16.0",
+]
+# Fase 2 en adelante.
+global-search = [
+    # "pygmo>=2.19",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/helios"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"

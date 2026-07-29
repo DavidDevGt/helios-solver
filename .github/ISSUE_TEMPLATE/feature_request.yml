@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose new functionality, a new task, or a change in approach.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `PLAN.md` first: features that jump ahead of the current phase
+        gate (see the "Backlog congelado" section) are deliberately deferred,
+        not rejected — scope control is a core design constraint of this
+        project (see `IDEA.md` §9, "Scope creep").
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+    validations:
+      required: false
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Verifiable deliverable
+      description: >-
+        Per this project's own rule: "if it can't be tested or plotted, it's
+        not a task, it's a wish." What test or figure would prove this is
+        done?
+    validations:
+      required: true

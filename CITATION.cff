@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata below.
+  This project has no associated paper yet; cite the repository itself.
+title: helios-solver
+abstract: >-
+  GPU-accelerated optimization of low-thrust spacecraft trajectories,
+  including a neural-surrogate-assisted global search for Earth-Mars
+  transfers.
+type: software
+authors:
+  - given-names: Josue
+version: 0.1.0
+date-released: "2026-07-29"
+license: MIT
+repository-code: "https://github.com/DavidDevGt/helios-solver"
+keywords:
+  - trajectory-optimization
+  - astrodynamics
+  - low-thrust-propulsion
+  - optimal-control
+  - GTOC
+  - surrogate-modeling

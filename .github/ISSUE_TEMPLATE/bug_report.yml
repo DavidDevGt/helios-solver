@@ -1,0 +1,40 @@
+name: Bug report
+description: Something behaves incorrectly (wrong numbers, failing test, crash).
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: this project treats **silent physics bugs** as the
+        top risk (see `IDEA.md` §7). If the bug is "the numbers look
+        physically implausible," please say so explicitly and include which
+        test/oracle it violates, if any.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you observe instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal command, script, or test case that reproduces it.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit / version
+      description: Output of `git rev-parse HEAD` or the version you're on.
+    validations:
+      required: false
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, `uv --version`, GPU (if relevant to the surrogate).
+    validations:
+      required: false

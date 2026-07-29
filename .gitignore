@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Entornos
+.venv/
+.uv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Datos generados (parquets del surrogate, cachés de efemérides)
+data/*
+!data/.gitkeep
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
