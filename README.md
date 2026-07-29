@@ -4,7 +4,6 @@
 
 **GPU-accelerated optimization of low-thrust spacecraft trajectories.**
 
-[![CI](https://github.com/DavidDevGt/helios-solver/actions/workflows/ci.yml/badge.svg)](https://github.com/DavidDevGt/helios-solver/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Status: Phase 0](https://img.shields.io/badge/status-phase%200%20(bring--up)-orange.svg)](PLAN.md)
