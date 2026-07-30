@@ -25,6 +25,7 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",
     "matplotlib>=3.8",
+    "jplephem>=2.24",
 ]
 
 [project.urls]
@@ -34,12 +35,11 @@ Issues = "https://github.com/DavidDevGt/helios-solver/issues"
 Changelog = "https://github.com/DavidDevGt/helios-solver/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-# D-1 (ver PLAN.md sec. 1) aun no cerrada: pykep si compila, si no hapsira+jplephem.
-orbital = [
-    # "pykep>=2.6",
-    # "hapsira>=0.18",
-    # "jplephem>=2.22",
-]
+# D-1 (PLAN.md sec. 1 / docs/adr/0001) cerrada: ni pykep (wheel de PyPI
+# rota, no importa) ni hapsira (incompatible con las versiones actuales
+# de astropy/numpy/scipy resolubles por uv) funcionan de forma limpia.
+# Backend real: `jplephem` (dependencia core, arriba) leyendo directo un
+# kernel SPK/NAIF versionado en src/helios/kernels/. Sin extra propio.
 # Fase 3 en adelante.
 surrogate = [
     "torch>=2.2",

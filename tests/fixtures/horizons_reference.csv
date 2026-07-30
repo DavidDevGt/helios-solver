@@ -1,0 +1,17 @@
+# Frozen JPL Horizons reference state vectors (T-0.7).
+# Source: NASA/JPL Horizons API (ssd.jpl.nasa.gov/api/horizons.api),
+# queried once on 2026-07-29 and frozen here -- tests/test_ephemeris.py
+# makes no network calls. Query parameters: CENTER='500@10' (Sun body
+# center), REF_PLANE='ECLIPTIC', REF_SYSTEM='J2000', VEC_TABLE='2',
+# OUT_UNITS='KM-S', TIME_TYPE='UT' (epoch given as UTC, Horizons converts
+# to TDB internally using real leap-second data -- this is the
+# authoritative check on helios.ephemeris's own fixed-offset UTC->TDB
+# approximation, see constants.UTC_TO_TDB_OFFSET_S).
+# Targets: Earth = 399, Mars = 499 (Horizons resolves the real body; the
+# repo's own kernel only carries the Mars-system barycenter, negligibly
+# different -- see docs/domain/glossary.md).
+body,epoch_utc,x_km,y_km,z_km,vx_km_s,vy_km_s,vz_km_s
+earth,2026-01-01T00:00:00,-2.607419936057027e+07,1.447743004715054e+08,-8.892833485603333e+03,-2.978885492452699e+01,-5.396685734655090e+00,4.109185818228500e-04
+earth,2028-06-15T12:00:00,-1.453866438207160e+07,-1.512687391351543e+08,9.580999756023288e+03,2.916692252695776e+01,-2.971954849354514e+00,-3.993131455515275e-04
+mars,2026-01-01T00:00:00,5.095168581046936e+07,-2.074920043689934e+08,-5.597567532014057e+06,2.444710444541995e+01,7.861360990602245e+00,-4.347381970288118e-01
+mars,2028-06-15T12:00:00,1.362193597489454e+08,1.738287235743369e+08,3.038519707281440e+05,-1.815187170874093e+01,1.701429750260137e+01,8.016547408959642e-01

@@ -5,8 +5,8 @@
 > `IDEA.md` responde **qué** y **por qué**. Este documento responde **cómo**, **en qué orden** y **cómo sé que ya terminé**.
 > Regla de oro: ninguna tarea entra aquí si no tiene entregable verificable. Si no se puede testear o graficar, no es una tarea, es un deseo.
 
-**Estado:** Fase 0 — no iniciada
-**Última actualización:** _(fecha)_
+**Estado:** Fase 1 en curso — Gate 0→1 cerrado, T-1.1/T-1.2/T-1.3/T-1.4 hechos, E1-E3 resueltos (E4-E5 pendientes)
+**Última actualización:** 2026-07-29
 **Milestone activo:** M1 — La Imagen (espiral convergida con rendezvous real)
 
 ---
@@ -54,6 +54,14 @@ Estas cuatro bloquean todo lo demás. Objetivo: cerrarlas en la primera sesión,
 **🚦 Gate 0 → 1:** T-0.5, T-0.6 y T-0.7 en verde en CI.
 Si el Δv de Hohmann no cuadra al 1 %, **hay un bug de unidades o de signo**. Ninguna trayectoria bonita más adelante compensa esto: es exactamente el fallo silencioso que describe §7 del IDEA.md.
 
+**✅ Cerrado (2026-07-29).** T-0.1 a T-0.8 completas, 8/8 tests en verde
+(`tests/test_hohmann.py`, `tests/test_dynamics.py`, `tests/test_ephemeris.py`
+nuevo para T-0.7). D-1 se resolvió en `jplephem` directo contra un kernel
+SPK propio (ni `pykep` ni `hapsira` importan limpiamente — ver
+[`docs/adr/0001`](docs/adr/0001-orbital-mechanics-library.md)); el error de
+posición contra Horizons real es de ~10 m, muy por debajo de la tolerancia
+de 1000 km.
+
 ---
 
 ## 3. Fase 1 — Baseline clásico (camino a M1)
@@ -63,18 +71,18 @@ Si el Δv de Hohmann no cuadra al 1 %, **hay un bug de unidades o de signo**. Ni
 ### Escalera de realismo (D-4)
 Cada escalón es un commit con su propia imagen guardada en `benchmarks/`. No se sube un escalón hasta que el anterior converge.
 
-1. **E1** — 2D, órbitas circulares coplanares, empuje constante, tiempo de vuelo fijo.
-2. **E2** — 2D, dirección de empuje variable (control discretizado), tiempo fijo.
-3. **E3** — 2D, tiempo de vuelo libre.
+1. **E1** ✅ — 2D, órbitas circulares coplanares, empuje constante, tiempo de vuelo fijo. `benchmarks/e1_constant_tangential_thrust.png`.
+2. **E2** ✅ — 2D, dirección de empuje variable (control discretizado), tiempo fijo. `benchmarks/e2_optimized_steering.png`.
+3. **E3** ✅ — 2D, tiempo de vuelo libre. `benchmarks/e3_free_tof.png`: TOF y dirección optimizados juntos (restricciones duras + minimizar TOF = maximizar masa final, objetivo genuino a diferencia de E2); TOF óptimo ≈ 169.2 días (vs. 180 fijo en E2), m_f/m_0 ≈ 75.1 % (vs. 73.6 % en E2). A diferencia de E2, aquí **sí converge al mismo óptimo** desde distintas semillas — ver `tests/test_e3_scenario.py`.
 4. **E4** — 3D con efemérides reales, fechas fijas.
 5. **E5** — 3D, rendezvous completo (posición **y** velocidad) → M1.
 
-| ID | Tarea | Entregable | Criterio de aceptación |
-|---|---|---|---|
-| T-1.1 | `dynamics.py`: EDO en unidades canónicas (r, v, m) con empuje | módulo + tests | Con `T=0` reproduce T-0.6; con empuje tangencial constante la energía crece monótona |
-| T-1.2 | Transcripción Sims-Flanagan propia, N segmentos, matching en el punto medio | `transcription.py` | Con la solución de Hohmann como entrada, el defecto de matching es ~0 |
-| T-1.3 | Función objetivo + restricciones para SLSQP | `solvers/local.py` | Gradientes por diferencias finitas validados contra derivada analítica en un caso trivial |
-| T-1.4 | Resolver E1 y E2 | imágenes en `benchmarks/` | Converge desde al menos 3 semillas distintas al mismo óptimo (±1 % en masa final) |
+| ID | Tarea | Entregable | Criterio de aceptación | Estado |
+|---|---|---|---|---|
+| T-1.1 | `dynamics.py`: EDO en unidades canónicas (r, v, m) con empuje | módulo + tests | Con `T=0` reproduce T-0.6; con empuje tangencial constante la energía crece monótona | ✅ |
+| T-1.2 | Transcripción Sims-Flanagan propia, N segmentos, matching en el punto medio | `transcription.py` | Con la solución de Hohmann como entrada, el defecto de matching es ~0 | ✅ |
+| T-1.3 | Función objetivo + restricciones para SLSQP | `solvers/local.py` | Gradientes por diferencias finitas validados contra derivada analítica en un caso trivial | ✅ |
+| T-1.4 | Resolver E1 y E2 | imágenes en `benchmarks/` | Converge desde al menos 3 semillas distintas al mismo óptimo (±1 % en masa final) | ✅ E1 (`benchmarks/e1_constant_tangential_thrust.png`) y E2 (`benchmarks/e2_optimized_steering.png`, SLSQP con restricciones duras). La parte de masa final del criterio se cumple literalmente (spread ~1e-16 entre semillas), pero **el perfil de dirección óptimo no es único** — auditoría con tres formulaciones de objetivo distintas confirma un subespacio de soluciones de 6 grados de libertad (2 restricciones, 8 variables); semillas distintas convergen de forma precisa a las restricciones pero a perfiles distintos entre sí (~ver `benchmarks/e2_optimized_steering.py` y `tests/test_e2_scenario.py`). Es la no-convexidad que anticipa IDEA.md §2, no un bug — motiva T-1.5/Fase 2 en vez de confiar en un solo SLSQP local |
 | T-1.5 | Multi-start paralelo con `joblib` | `solvers/multistart.py` | 200 semillas en paralelo, reporte de tasa de convergencia por semilla |
 | T-1.6 | Migrar a IPOPT (`cyipopt`) si SLSQP se atasca | flag `--solver=ipopt` | Mismo óptimo que SLSQP en E2, o mejor, en menos iteraciones |
 | T-1.7 | Subir a E4/E5 con efemérides reales | commits por escalón | Restricción de rendezvous satisfecha: \|Δr\| < 1000 km y \|Δv\| < 1 m/s |
@@ -131,12 +139,15 @@ Si resulta que no, el surrogate no es la optimización correcta y hay que replan
 
 ## 7. Registro de decisiones
 
-| # | Fecha | Decisión | Motivo | Estado |
-|---|---|---|---|---|
-| 1 | — | D-1: librería orbital | — | abierta |
-| 2 | — | D-2: gestor de entorno | — | abierta |
-| 3 | — | D-3: unidades canónicas | Condicionamiento numérico del NLP | propuesta |
-| 4 | — | D-4: escalera de realismo | Aislar bugs de física de bugs de optimización | propuesta |
+El detalle completo (contexto/decisión/consecuencias) de cada fila vive en
+[`docs/adr/`](docs/adr/README.md) — esta tabla es el índice corto.
+
+| # | Fecha | Decisión | Motivo | Estado | ADR |
+|---|---|---|---|---|---|
+| 1 | 2026-07-29 | D-1: librería orbital | Ni `pykep` (wheel rota) ni `hapsira` (incompatible con astropy/numpy/scipy actuales) importan; `jplephem` directo contra un kernel propio si funciona y valida a ~10 m contra Horizons | aceptada | [0001](docs/adr/0001-orbital-mechanics-library.md) |
+| 2 | — | D-2: gestor de entorno | Ya ejercida en la práctica: `pyproject.toml`/`uv.lock`/CI usan `uv` exclusivamente | aceptada | [0002](docs/adr/0002-environment-manager.md) |
+| 3 | — | D-3: unidades canónicas | Condicionamiento numérico del NLP; ya implementada en `constants.py` (`DU_KM`/`TU_S`) | aceptada | [0003](docs/adr/0003-canonical-units.md) |
+| 4 | — | D-4: escalera de realismo | Aislar bugs de física de bugs de optimización; usada consistentemente en README/PLAN | aceptada | [0004](docs/adr/0004-realism-ladder.md) |
 
 ---
 
@@ -154,7 +165,7 @@ Si resulta que no, el surrogate no es la optimización correcta y hay que replan
 
 | Riesgo | Disparador observable | Acción inmediata |
 |---|---|---|
-| pykep no instala | 60 min sin wheel funcional | Cambiar a `hapsira`/`jplephem`; anotar D-1 y seguir |
+| pykep no instala | 60 min sin wheel funcional | ~~Cambiar a `hapsira`/`jplephem`~~ — **ocurrió, y `hapsira` tampoco importa** (ver [ADR-0001](docs/adr/0001-orbital-mechanics-library.md)); fallback real: `jplephem` directo contra un kernel SPK propio |
 | El NLP no converge nunca | 3 escalones fallidos seguidos en E1–E2 | Bajar a E1 con TOF fijo y control de 3 segmentos; si eso tampoco, es bug de gradientes/unidades, no del solver |
 | Mínimos locales dominan | Multi-start con <5 % de convergencia | Adelantar T-2.1 (pygmo) antes de terminar M1 |
 | Surrogate no generaliza | p99 de error > 10 % | Reducir dominio (§T-3.1), entrenar por regiones; si persiste, cerrar Fase 3 con resultado negativo documentado |
@@ -165,9 +176,25 @@ Si resulta que no, el surrogate no es la optimización correcta y hay que replan
 
 ## 10. Próximas 3 acciones
 
-1. Cerrar D-1 y D-2 con timebox de 60 minutos (T-0.1, T-0.2).
-2. Escribir `tests/test_hohmann.py` **antes** que el integrador — es el oráculo de todo lo demás (T-0.5).
-3. Poner el CI en rojo a propósito y luego en verde (T-0.3).
+~~1. Cerrar D-1 y D-2 con timebox de 60 minutos (T-0.1, T-0.2).~~
+~~2. Escribir `tests/test_hohmann.py` antes que el integrador (T-0.5).~~
+~~3. Poner el CI en rojo a propósito y luego en verde (T-0.3).~~
+~~4. E2: optimizar la dirección de empuje por segmento con SLSQP.~~
+~~5. E3: liberar el tiempo de vuelo.~~
+Hecho — E1, E2 y E3 resueltos (ver escalera arriba). Próximas 3 reales:
+
+1. T-1.5: multi-start paralelo (`joblib`) — con E2/E3 ya convergiendo de
+   forma confiable desde múltiples semillas (ver `tests/test_e2_scenario.py`,
+   `tests/test_e3_scenario.py`), este es el momento natural de
+   paralelizarlo en lugar de un loop serial, y de correrlo sobre muchas
+   más semillas de las que un test unitario puede pagar.
+2. E4 (T-1.7): subir a 3D con efemérides reales (`ephemeris.py`, ya
+   implementado) mantiando fechas fijas — recién ahí entra
+   `helios.ephemeris` al problema de optimización, no solo a los tests
+   de Fase 0. Escalón obligatorio antes de E5 (D-4 / `docs/adr/0004`).
+3. E5 / T-1.9: rendezvous completo (posición y velocidad reales de
+   Marte, no la aproximación circular idealizada de E1-E3) + verificación
+   final por integración de alta precisión → cierra M1 y el Gate 1→2.
 
 ---
 
