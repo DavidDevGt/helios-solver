@@ -2,7 +2,7 @@
 
 > Status legend used throughout this doc: 🟢 implemented · 🟡 stub (signature
 > + docstring only, raises `NotImplementedError`) · ⚪ not started.
-> Checked against the repo as of Gate 0→1 closing + E1/E2/E3 (first three
+> Checked against the repo as of Gate 0→1 closing + E1-E4 (first four
 > realism-ladder rungs, see [`ADR-0004`](../adr/0004-realism-ladder.md))
 > solved — re-verify against `src/helios/` before trusting this if it's
 > been a while.

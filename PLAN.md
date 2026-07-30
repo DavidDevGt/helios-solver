@@ -5,7 +5,7 @@
 > `IDEA.md` responde **qué** y **por qué**. Este documento responde **cómo**, **en qué orden** y **cómo sé que ya terminé**.
 > Regla de oro: ninguna tarea entra aquí si no tiene entregable verificable. Si no se puede testear o graficar, no es una tarea, es un deseo.
 
-**Estado:** Fase 1 en curso — Gate 0→1 cerrado, T-1.1/T-1.2/T-1.3/T-1.4 hechos, E1-E3 resueltos (E4-E5 pendientes)
+**Estado:** Fase 1 en curso — Gate 0→1 cerrado, T-1.1/T-1.2/T-1.3/T-1.4 hechos, E1-E4 resueltos (solo falta E5 para M1)
 **Última actualización:** 2026-07-29
 **Milestone activo:** M1 — La Imagen (espiral convergida con rendezvous real)
 
@@ -74,7 +74,7 @@ Cada escalón es un commit con su propia imagen guardada en `benchmarks/`. No se
 1. **E1** ✅ — 2D, órbitas circulares coplanares, empuje constante, tiempo de vuelo fijo. `benchmarks/e1_constant_tangential_thrust.png`.
 2. **E2** ✅ — 2D, dirección de empuje variable (control discretizado), tiempo fijo. `benchmarks/e2_optimized_steering.png`.
 3. **E3** ✅ — 2D, tiempo de vuelo libre. `benchmarks/e3_free_tof.png`: TOF y dirección optimizados juntos (restricciones duras + minimizar TOF = maximizar masa final, objetivo genuino a diferencia de E2); TOF óptimo ≈ 169.2 días (vs. 180 fijo en E2), m_f/m_0 ≈ 75.1 % (vs. 73.6 % en E2). A diferencia de E2, aquí **sí converge al mismo óptimo** desde distintas semillas — ver `tests/test_e3_scenario.py`.
-4. **E4** — 3D con efemérides reales, fechas fijas.
+4. **E4** ✅ — 3D con efemérides reales, fechas fijas. `benchmarks/e4_real_ephemerides.png`: salida = estado real de la Tierra (`ephemeris.py`) el 2029-01-01, objetivo = posición real de Marte el 2029-09-14 (TOF=256 días; ventana verificada — ángulo Tierra-Sol-Marte ~170.6°, cerca del ideal de Hohmann de 180°, no una fecha arbitraria). Control genuinamente 3D (`alpha` y `beta` libres). Error de posición final ~6 km (tolerancia 1000 km, mismo estándar que T-0.7). Solo posición, no velocidad — eso es E5.
 5. **E5** — 3D, rendezvous completo (posición **y** velocidad) → M1.
 
 | ID | Tarea | Entregable | Criterio de aceptación | Estado |
@@ -83,11 +83,11 @@ Cada escalón es un commit con su propia imagen guardada en `benchmarks/`. No se
 | T-1.2 | Transcripción Sims-Flanagan propia, N segmentos, matching en el punto medio | `transcription.py` | Con la solución de Hohmann como entrada, el defecto de matching es ~0 | ✅ |
 | T-1.3 | Función objetivo + restricciones para SLSQP | `solvers/local.py` | Gradientes por diferencias finitas validados contra derivada analítica en un caso trivial | ✅ |
 | T-1.4 | Resolver E1 y E2 | imágenes en `benchmarks/` | Converge desde al menos 3 semillas distintas al mismo óptimo (±1 % en masa final) | ✅ E1 (`benchmarks/e1_constant_tangential_thrust.png`) y E2 (`benchmarks/e2_optimized_steering.png`, SLSQP con restricciones duras). La parte de masa final del criterio se cumple literalmente (spread ~1e-16 entre semillas), pero **el perfil de dirección óptimo no es único** — auditoría con tres formulaciones de objetivo distintas confirma un subespacio de soluciones de 6 grados de libertad (2 restricciones, 8 variables); semillas distintas convergen de forma precisa a las restricciones pero a perfiles distintos entre sí (~ver `benchmarks/e2_optimized_steering.py` y `tests/test_e2_scenario.py`). Es la no-convexidad que anticipa IDEA.md §2, no un bug — motiva T-1.5/Fase 2 en vez de confiar en un solo SLSQP local |
-| T-1.5 | Multi-start paralelo con `joblib` | `solvers/multistart.py` | 200 semillas en paralelo, reporte de tasa de convergencia por semilla |
-| T-1.6 | Migrar a IPOPT (`cyipopt`) si SLSQP se atasca | flag `--solver=ipopt` | Mismo óptimo que SLSQP en E2, o mejor, en menos iteraciones |
-| T-1.7 | Subir a E4/E5 con efemérides reales | commits por escalón | Restricción de rendezvous satisfecha: \|Δr\| < 1000 km y \|Δv\| < 1 m/s |
-| T-1.8 | 🎯 **`viz.py` — LA IMAGEN** | `benchmarks/m1_spiral.png` | Órbitas en gris, espiral en color, flechas de empuje escaladas por magnitud, anotaciones: fechas, Δv efectivo, m_f/m_0, TOF |
-| T-1.9 | Verificación final por integración de alta precisión | `tests/test_m1_solution.py` | La solución del optimizador, re-integrada con `rtol=1e-12`, cumple el rendezvous. **Ninguna solución se publica sin este paso** |
+| T-1.5 | Multi-start paralelo con `joblib` | `solvers/multistart.py` | 200 semillas en paralelo, reporte de tasa de convergencia por semilla | |
+| T-1.6 | Migrar a IPOPT (`cyipopt`) si SLSQP se atasca | flag `--solver=ipopt` | Mismo óptimo que SLSQP en E2, o mejor, en menos iteraciones | |
+| T-1.7 | Subir a E4/E5 con efemérides reales | commits por escalón | Restricción de rendezvous satisfecha: \|Δr\| < 1000 km y \|Δv\| < 1 m/s | 🟡 E4 (`benchmarks/e4_real_ephemerides.png`, ver escalera arriba); E5 pendiente |
+| T-1.8 | 🎯 **`viz.py` — LA IMAGEN** | `benchmarks/m1_spiral.png` | Órbitas en gris, espiral en color, flechas de empuje escaladas por magnitud, anotaciones: fechas, Δv efectivo, m_f/m_0, TOF | 🟡 `plot_trajectory` implementada y en uso desde E1 (todas las figuras de la escalera la usan); `m1_spiral.png` específico depende de que E5 converja |
+| T-1.9 | Verificación final por integración de alta precisión | `tests/test_m1_solution.py` | La solución del optimizador, re-integrada con `rtol=1e-12`, cumple el rendezvous. **Ninguna solución se publica sin este paso** | |
 
 **Caso de referencia a fijar en Fase 1** (el IDEA.md dejó el número cortado — cerrarlo aquí):
 Isp = 3000 s, T_max = 0.5 N, m_0 = 1000 kg, TOF ≈ 300–400 días → **m_f ≳ 800 kg (≥ 80 %)**.
@@ -181,17 +181,23 @@ El detalle completo (contexto/decisión/consecuencias) de cada fila vive en
 ~~3. Poner el CI en rojo a propósito y luego en verde (T-0.3).~~
 ~~4. E2: optimizar la dirección de empuje por segmento con SLSQP.~~
 ~~5. E3: liberar el tiempo de vuelo.~~
-Hecho — E1, E2 y E3 resueltos (ver escalera arriba). Próximas 3 reales:
+~~6. E4: subir a 3D con efemérides reales, fechas fijas.~~
+Hecho — E1 a E4 resueltos (ver escalera arriba). Próximas 3 reales:
 
-1. T-1.5: multi-start paralelo (`joblib`) — con E2/E3 ya convergiendo de
-   forma confiable desde múltiples semillas (ver `tests/test_e2_scenario.py`,
-   `tests/test_e3_scenario.py`), este es el momento natural de
+1. E5 (T-1.9): rendezvous completo — posición **y** velocidad reales de
+   Marte, no solo posición como E4. Objetivo real disponible de nuevo
+   (maximizar masa final, con TOF libre como en E3 combinado con
+   efemérides reales como en E4) en vez del objetivo blando de E4.
+   Cierra M1 y el Gate 1→2 — requiere T-1.9 (verificación por
+   integración de alta precisión) antes de darlo por bueno.
+2. T-1.5: multi-start paralelo (`joblib`) — con E2/E3/E4 ya convergiendo
+   de forma confiable desde múltiples semillas (ver
+   `tests/test_e2_scenario.py`, `tests/test_e3_scenario.py`,
+   `tests/test_e4_scenario.py`), este es el momento natural de
    paralelizarlo en lugar de un loop serial, y de correrlo sobre muchas
    más semillas de las que un test unitario puede pagar.
-2. E4 (T-1.7): subir a 3D con efemérides reales (`ephemeris.py`, ya
-   implementado) mantiando fechas fijas — recién ahí entra
-   `helios.ephemeris` al problema de optimización, no solo a los tests
-   de Fase 0. Escalón obligatorio antes de E5 (D-4 / `docs/adr/0004`).
+3. `benchmarks/m1_spiral.png` (T-1.8): una vez converja E5, generar LA
+   imagen final de Fase 1 y enlazarla desde el README (DoD §8).
 3. E5 / T-1.9: rendezvous completo (posición y velocidad reales de
    Marte, no la aproximación circular idealizada de E1-E3) + verificación
    final por integración de alta precisión → cierra M1 y el Gate 1→2.

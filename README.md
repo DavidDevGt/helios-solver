@@ -57,17 +57,21 @@ English-language entry point for the rest of the world.
 ephemerides, dynamics, and the Hohmann/energy-conservation oracles are
 implemented and green in CI (physics foundations verified to ~10 m against
 live JPL Horizons — see [`docs/adr/0001`](docs/adr/0001-orbital-mechanics-library.md)).
-The first three realism-ladder rungs are solved: E1 (constant tangential
+The first four realism-ladder rungs are solved: E1 (constant tangential
 thrust, no optimizer), E2 (SLSQP-optimized steering direction, fixed time
-of flight), and E3 (steering **and** time of flight both optimized). E4
-(real 3D ephemerides) is the current open task. See [Roadmap](#roadmap)
-below and [`PLAN.md`](PLAN.md) for the full task-level status.
+of flight), E3 (steering **and** time of flight both optimized), and E4
+(real 3D ephemerides — the spacecraft now departs Earth's *actual*
+position on a real calendar date and targets Mars's *actual* position on
+another). E5 (full rendezvous — position and velocity, M1) is the
+current open task. See [Roadmap](#roadmap) below and [`PLAN.md`](PLAN.md)
+for the full task-level status.
 
 | | |
 |---|---|
 | ![E1: constant tangential thrust](benchmarks/e1_constant_tangential_thrust.png) | **E1** — a purely tangential, always-on thrust spiral from Earth's orbit, integrated with the actual `dynamics.py` equations of motion. No optimizer involved; it crosses Mars's orbital radius by construction (TOF chosen for that), not a rendezvous. |
 | ![E2: SLSQP-optimized steering](benchmarks/e2_optimized_steering.png) | **E2** — same thrust magnitude and time of flight as E1, but the steering angle per segment is now optimized by SLSQP (minimum control effort subject to hard terminal constraints), reliably hitting a genuine quasi-circular insertion at Mars's orbital radius (matches both radius and speed, not just radius) from every seed tested. The *steering profile* that achieves it isn't unique, though — see the note below; still not a rendezvous, that's E4/E5's job. |
 | ![E3: free time of flight](benchmarks/e3_free_tof.png) | **E3** — same quasi-circular insertion target as E2, but the time of flight is now also a decision variable, and the objective is genuine (minimize TOF, which — with thrust magnitude fixed — is literally the same thing as maximizing final mass, the project's actual objective). Converges to TOF ≈ 169.2 days (vs. E2's fixed 180) with m_f/m_0 ≈ 75.1% (vs. E2's 73.6%), and — unlike E2 — to the *same* optimum from every seed tested, because the objective is well-posed instead of a degenerate proxy. |
+| ![E4: real 3D ephemerides](benchmarks/e4_real_ephemerides.png) | **E4** — first rung using real ephemerides instead of idealized circular orbits: departs Earth's actual position/velocity on 2029-01-01 and targets Mars's actual position on 2029-09-14 (a launch window checked for realistic geometry beforehand — ~170.6° Earth-Sun-Mars transfer angle, close to Hohmann's ideal 180°, not an arbitrary date pair). Control is genuinely 3D (in-plane *and* out-of-plane steering) since real orbits aren't coplanar. Reaches Mars's real position within ~6 km. Position only, not velocity — that's still E5. |
 
 **A finding worth stating plainly:** E2's optimal steering profile is *not
 unique* — different SLSQP seeds reliably satisfy the same terminal

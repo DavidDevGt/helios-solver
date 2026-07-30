@@ -72,6 +72,27 @@ once a first tagged release exists.
   widening the bounds and watching the objective improve). Bounds
   widened to `[-2π, 2π]`; documented in `e3_free_tof.py`'s docstring as
   a reusable lesson for any future segment-direction parametrization.
+- E4 solved: first rung using real ephemerides instead of idealized
+  circular orbits — departs Earth's actual state on a fixed real
+  calendar date (2029-01-01) and targets Mars's actual position on
+  another (2029-09-14), a launch window checked for realistic transfer
+  geometry beforehand (~170.6° Earth-Sun-Mars angle) rather than an
+  arbitrary date pair — `benchmarks/e4_real_ephemerides.py` / `.png`.
+  Control is genuinely 3D (in-plane and out-of-plane steering) since
+  real orbits aren't coplanar. Reaches Mars's real position within
+  ~6 km (vs. the 1000 km T-0.7 tolerance). Position only, not velocity
+  (that's E5). Regression-tested in `tests/test_e4_scenario.py`.
+- Found during E4 development: the hard-constraint formulation that
+  worked well for E2/E3 (equality constraints + minimize control
+  effort) fails to converge here (`solve_slsqp` raises reliably,
+  including when warm-started from a near-feasible point) once the
+  constraint is a 3-component position vector instead of 1-2 scalars.
+  Used a direct soft objective instead (minimize squared position
+  error) — genuine rather than a proxy, since position-match quality
+  is literally what E4 has to demonstrate, and it converges robustly
+  and consistently across seeds. Documented as a known limit of the
+  hard-constraint approach in `e4_real_ephemerides.py`'s docstring
+  rather than silently swapped without explanation.
 
 ## [0.1.0] - 2026-07-29
 
