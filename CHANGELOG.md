@@ -93,6 +93,36 @@ once a first tagged release exists.
   and consistently across seeds. Documented as a known limit of the
   hard-constraint approach in `e4_real_ephemerides.py`'s docstring
   rather than silently swapped without explanation.
+- **M1 reached — Phase 1 complete.** E5 (full rendezvous: position
+  *and* velocity, not just position like E4) solved —
+  `benchmarks/e5_rendezvous.py` / `.png`, also saved as
+  `benchmarks/m1_spiral.png` (T-1.8's deliverable). Departs Earth's
+  real state on 2029-01-01, matches Mars's real position and velocity
+  on 2029-12-17: \|Δr\| = 1.67 km, \|Δv\| = 0.0002 m/s against T-1.7's
+  1000 km / 1 m/s tolerance, re-verified at `rtol=1e-12` (T-1.9) before
+  being trusted — `tests/test_e5_scenario.py`. Gate 1→2 closed.
+  - Found during E5 development: the 256-day launch window carried
+    over from E4 (good for position-only matching) turned out too
+    short for full rendezvous — no segment count, seed, or throttle
+    profile closed a combined position+velocity match (errors in the
+    millions of km / thousands of m/s). An isolation test (matching
+    velocity alone, ignoring position) converged perfectly, ruling out
+    a units bug and confirming the problem was reachability, not
+    correctness. A TOF sweep found 350–400 days work cleanly — the
+    same range `PLAN.md`'s own reference case already named.
+  - Solved with a two-stage formulation: a direction-only, always-on-
+    thrust soft objective finds a feasible warm start; a second stage
+    frees the throttle and switches to hard equality constraints
+    (position and velocity) with a genuine objective (maximize final
+    mass), refining from that seed. Final mass fraction (62.2%) is
+    below the ~80% PLAN.md cites as an efficient-trajectory sanity
+    check — expected, not swept under the rug: PLAN.md's own
+    diagnostic already names a result below 70% as the signature of
+    inefficient control, which is exactly what an always-full-throttle
+    warm start produces. T-1.7's actual acceptance criterion is
+    rendezvous precision, not mass efficiency, and that's cleared by
+    3+ orders of magnitude; closing the efficiency gap is explicitly
+    T-1.5 (multi-start) and Phase 2 (global search) work.
 
 ## [0.1.0] - 2026-07-29
 

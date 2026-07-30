@@ -5,9 +5,9 @@
 > `IDEA.md` responde **qué** y **por qué**. Este documento responde **cómo**, **en qué orden** y **cómo sé que ya terminé**.
 > Regla de oro: ninguna tarea entra aquí si no tiene entregable verificable. Si no se puede testear o graficar, no es una tarea, es un deseo.
 
-**Estado:** Fase 1 en curso — Gate 0→1 cerrado, T-1.1/T-1.2/T-1.3/T-1.4 hechos, E1-E4 resueltos (solo falta E5 para M1)
+**Estado:** 🎯 **M1 alcanzado — Gate 1→2 cerrado.** Fase 1 completa (T-1.1 a T-1.9, E1-E5). Próximo: Fase 2 (búsqueda global) o cerrar T-1.5/T-1.6 primero.
 **Última actualización:** 2026-07-29
-**Milestone activo:** M1 — La Imagen (espiral convergida con rendezvous real)
+**Milestone activo:** M2 — ventana de lanzamiento auto-descubierta (Fase 2)
 
 ---
 
@@ -75,7 +75,11 @@ Cada escalón es un commit con su propia imagen guardada en `benchmarks/`. No se
 2. **E2** ✅ — 2D, dirección de empuje variable (control discretizado), tiempo fijo. `benchmarks/e2_optimized_steering.png`.
 3. **E3** ✅ — 2D, tiempo de vuelo libre. `benchmarks/e3_free_tof.png`: TOF y dirección optimizados juntos (restricciones duras + minimizar TOF = maximizar masa final, objetivo genuino a diferencia de E2); TOF óptimo ≈ 169.2 días (vs. 180 fijo en E2), m_f/m_0 ≈ 75.1 % (vs. 73.6 % en E2). A diferencia de E2, aquí **sí converge al mismo óptimo** desde distintas semillas — ver `tests/test_e3_scenario.py`.
 4. **E4** ✅ — 3D con efemérides reales, fechas fijas. `benchmarks/e4_real_ephemerides.png`: salida = estado real de la Tierra (`ephemeris.py`) el 2029-01-01, objetivo = posición real de Marte el 2029-09-14 (TOF=256 días; ventana verificada — ángulo Tierra-Sol-Marte ~170.6°, cerca del ideal de Hohmann de 180°, no una fecha arbitraria). Control genuinamente 3D (`alpha` y `beta` libres). Error de posición final ~6 km (tolerancia 1000 km, mismo estándar que T-0.7). Solo posición, no velocidad — eso es E5.
-5. **E5** — 3D, rendezvous completo (posición **y** velocidad) → M1.
+5. **M1** ✅ — 3D, rendezvous completo (posición **y** velocidad). `benchmarks/e5_rendezvous.png` = `benchmarks/m1_spiral.png` (T-1.8, LA IMAGEN): salida real de la Tierra 2029-01-01, rendezvous con Marte 2029-12-17 (TOF=350 días — no los 256 heredados de E4; ver hallazgo de búsqueda de TOF abajo). Error final \|Δr\| = 1.67 km, \|Δv\| = 0.0002 m/s (tolerancia T-1.7: 1000 km / 1 m/s — cumplido con 3+ órdenes de magnitud de margen). Verificado a `rtol=1e-12` (T-1.9). m_f/m_0 = 62.2 % (por debajo del ~80 % idealizado de §3 abajo — ver nota).
+
+**Hallazgo de la búsqueda de TOF para M1:** el TOF de 256 días heredado de E4 (bueno para *posición sola*) resultó demasiado corto para rendezvous completo — con ese TOF, ningún número de segmentos, semillas, o control de throttle acercó la solución combinada posición+velocidad a nada razonable (millones de km, miles de m/s), mientras que el matching de *solo* velocidad en aislamiento convergía perfecto (descarta bug de unidades). Un barrido de TOF confirmó que 350-400 días — el rango que este mismo documento ya anticipaba como referencia — sí convergen limpio. Formulación final en dos etapas: arranque con dirección-solamente + objetivo blando combinado, luego refinamiento con throttle libre + restricciones duras + maximizar masa. Detalle completo en el docstring de `benchmarks/e5_rendezvous.py`.
+
+**Sobre el 62.2 % vs. el ~80 % idealizado:** PLAN.md §3 ya avisa que un resultado por debajo de 0.70 sugiere "control ineficiente" — exactamente lo que pasa aquí (el arranque de la búsqueda usa empuje siempre al máximo). El **criterio real de aceptación de T-1.7 es la precisión del rendezvous, no la fracción de masa**, y ese sí se cumple con margen amplio. Cerrar la brecha de eficiencia es explícitamente trabajo de T-1.5 (multi-start) y Fase 2 (búsqueda global), no de este escalón.
 
 | ID | Tarea | Entregable | Criterio de aceptación | Estado |
 |---|---|---|---|---|
@@ -85,15 +89,22 @@ Cada escalón es un commit con su propia imagen guardada en `benchmarks/`. No se
 | T-1.4 | Resolver E1 y E2 | imágenes en `benchmarks/` | Converge desde al menos 3 semillas distintas al mismo óptimo (±1 % en masa final) | ✅ E1 (`benchmarks/e1_constant_tangential_thrust.png`) y E2 (`benchmarks/e2_optimized_steering.png`, SLSQP con restricciones duras). La parte de masa final del criterio se cumple literalmente (spread ~1e-16 entre semillas), pero **el perfil de dirección óptimo no es único** — auditoría con tres formulaciones de objetivo distintas confirma un subespacio de soluciones de 6 grados de libertad (2 restricciones, 8 variables); semillas distintas convergen de forma precisa a las restricciones pero a perfiles distintos entre sí (~ver `benchmarks/e2_optimized_steering.py` y `tests/test_e2_scenario.py`). Es la no-convexidad que anticipa IDEA.md §2, no un bug — motiva T-1.5/Fase 2 en vez de confiar en un solo SLSQP local |
 | T-1.5 | Multi-start paralelo con `joblib` | `solvers/multistart.py` | 200 semillas en paralelo, reporte de tasa de convergencia por semilla | |
 | T-1.6 | Migrar a IPOPT (`cyipopt`) si SLSQP se atasca | flag `--solver=ipopt` | Mismo óptimo que SLSQP en E2, o mejor, en menos iteraciones | |
-| T-1.7 | Subir a E4/E5 con efemérides reales | commits por escalón | Restricción de rendezvous satisfecha: \|Δr\| < 1000 km y \|Δv\| < 1 m/s | 🟡 E4 (`benchmarks/e4_real_ephemerides.png`, ver escalera arriba); E5 pendiente |
-| T-1.8 | 🎯 **`viz.py` — LA IMAGEN** | `benchmarks/m1_spiral.png` | Órbitas en gris, espiral en color, flechas de empuje escaladas por magnitud, anotaciones: fechas, Δv efectivo, m_f/m_0, TOF | 🟡 `plot_trajectory` implementada y en uso desde E1 (todas las figuras de la escalera la usan); `m1_spiral.png` específico depende de que E5 converja |
-| T-1.9 | Verificación final por integración de alta precisión | `tests/test_m1_solution.py` | La solución del optimizador, re-integrada con `rtol=1e-12`, cumple el rendezvous. **Ninguna solución se publica sin este paso** | |
+| T-1.7 | Subir a E4/E5 con efemérides reales | commits por escalón | Restricción de rendezvous satisfecha: \|Δr\| < 1000 km y \|Δv\| < 1 m/s | ✅ E4 y E5/M1 (ver escalera arriba) — \|Δr\|=1.67 km, \|Δv\|=0.0002 m/s |
+| T-1.8 | 🎯 **`viz.py` — LA IMAGEN** | `benchmarks/m1_spiral.png` | Órbitas en gris, espiral en color, flechas de empuje escaladas por magnitud, anotaciones: fechas, Δv efectivo, m_f/m_0, TOF | ✅ `benchmarks/m1_spiral.png` |
+| T-1.9 | Verificación final por integración de alta precisión | `tests/test_e5_scenario.py` (el entregable original decía `test_m1_solution.py`; se unificó con el archivo de escenario de E5, mismo contenido) | La solución del optimizador, re-integrada con `rtol=1e-12`, cumple el rendezvous. **Ninguna solución se publica sin este paso** | ✅ |
 
 **Caso de referencia a fijar en Fase 1** (el IDEA.md dejó el número cortado — cerrarlo aquí):
 Isp = 3000 s, T_max = 0.5 N, m_0 = 1000 kg, TOF ≈ 300–400 días → **m_f ≳ 800 kg (≥ 80 %)**.
 Cálculo de cordura con Tsiolkovsky: si Δv efectivo del bajo empuje ≈ 5.5–6.5 km/s con Isp 3000 s (v_e ≈ 29.4 km/s), entonces m_f/m_0 = exp(−Δv/v_e) ≈ 0.80–0.83. **Consistente.** Si el resultado sale muy por encima de 0.85, sospechar que el rendezvous no es real (probablemente solo cruza la órbita). Si sale por debajo de 0.70, sospechar control ineficiente o demasiadas revoluciones.
 
 **🚦 Gate 1 → 2:** `m1_spiral.png` existe, T-1.9 en verde, y el README muestra la imagen.
+
+**✅ Cerrado (2026-07-29).** `benchmarks/m1_spiral.png` existe,
+`tests/test_e5_scenario.py::test_e5_rendezvous_satisfies_t17_tolerance_at_t19_precision`
+en verde, README actualizado con la imagen. m_f/m_0 = 62.2 % queda por
+debajo del ~80 % de referencia (ver nota arriba); no bloquea el gate
+porque el criterio de T-1.7/T-1.9 es precisión de rendezvous, no
+eficiencia de propelente — cerrar esa brecha es explícitamente Fase 2.
 
 ---
 
@@ -182,25 +193,24 @@ El detalle completo (contexto/decisión/consecuencias) de cada fila vive en
 ~~4. E2: optimizar la dirección de empuje por segmento con SLSQP.~~
 ~~5. E3: liberar el tiempo de vuelo.~~
 ~~6. E4: subir a 3D con efemérides reales, fechas fijas.~~
-Hecho — E1 a E4 resueltos (ver escalera arriba). Próximas 3 reales:
+~~7. E5/M1: rendezvous completo (posición y velocidad) + T-1.9.~~
+Hecho — **M1 alcanzado, Fase 1 completa** (ver escalera y Gate 1→2
+arriba). Próximas 3 reales, ya en Fase 2:
 
-1. E5 (T-1.9): rendezvous completo — posición **y** velocidad reales de
-   Marte, no solo posición como E4. Objetivo real disponible de nuevo
-   (maximizar masa final, con TOF libre como en E3 combinado con
-   efemérides reales como en E4) en vez del objetivo blando de E4.
-   Cierra M1 y el Gate 1→2 — requiere T-1.9 (verificación por
-   integración de alta precisión) antes de darlo por bueno.
-2. T-1.5: multi-start paralelo (`joblib`) — con E2/E3/E4 ya convergiendo
-   de forma confiable desde múltiples semillas (ver
-   `tests/test_e2_scenario.py`, `tests/test_e3_scenario.py`,
-   `tests/test_e4_scenario.py`), este es el momento natural de
-   paralelizarlo en lugar de un loop serial, y de correrlo sobre muchas
-   más semillas de las que un test unitario puede pagar.
-3. `benchmarks/m1_spiral.png` (T-1.8): una vez converja E5, generar LA
-   imagen final de Fase 1 y enlazarla desde el README (DoD §8).
-3. E5 / T-1.9: rendezvous completo (posición y velocidad reales de
-   Marte, no la aproximación circular idealizada de E1-E3) + verificación
-   final por integración de alta precisión → cierra M1 y el Gate 1→2.
+1. T-1.5 (multi-start real) antes que Fase 2 formal: con E2-E5 ya
+   convergiendo desde semillas individuales pero mostrando comportamiento
+   no-convexo genuino (E2: perfiles distintos; M1: 62% en vez del ~80%
+   idealizado por partir de un arranque ineficiente), correr cientos de
+   semillas en paralelo con `joblib` es lo que decide si esa brecha se
+   cierra con más cómputo o si hace falta búsqueda global de verdad.
+2. T-2.1: envolver el problema (ya validado end-to-end en E5) como
+   `pygmo.problem`, reusando `transcription.py`/`dynamics.py` sin
+   duplicar la definición de objetivo/restricciones — igual que el
+   local, per T-2.1.
+3. T-2.5 antes que cualquier trabajo de Fase 3: perfilar dónde se va
+   el tiempo de cómputo real (¿integración de EDOs? ¿evaluación de
+   gradientes por diferencias finitas?) — la Fase 3 (surrogate) solo
+   se justifica si ese número sale >70%, medido, no asumido.
 
 ---
 
